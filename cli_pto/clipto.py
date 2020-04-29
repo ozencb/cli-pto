@@ -5,24 +5,18 @@ Author: Özenç Bilgili
 Description: cli-pto is a CLI text editing tool with encryption.
 """
 
-
+import sys
+import os
 import datetime
 from asyncio import Future, ensure_future
 
 from prompt_toolkit.application import Application
+from prompt_toolkit.shortcuts import input_dialog
+
 from prompt_toolkit.application.current import get_app
 from prompt_toolkit.completion import PathCompleter
 from prompt_toolkit.filters import Condition
 from prompt_toolkit.key_binding import KeyBindings
-from prompt_toolkit.layout.containers import (
-    ConditionalContainer,
-    Float,
-    HSplit,
-    VSplit,
-    Window,
-    WindowAlign,
-    FloatContainer,
-)
 from prompt_toolkit.layout.controls import FormattedTextControl
 from prompt_toolkit.layout.dimension import D
 from prompt_toolkit.layout.layout import Layout
@@ -40,38 +34,21 @@ from prompt_toolkit.widgets import (
     TextArea,
     Frame
 )
+from prompt_toolkit.layout.containers import (
+    ConditionalContainer,
+    Float,
+    HSplit,
+    VSplit,
+    Window,
+    WindowAlign,
+    FloatContainer,
+)
 
 
 class ApplicationState:
     show_status_bar = True
     current_path = None
 
-
-# Handlers
-# --------
-
-search_toolbar = SearchToolbar()
-text_field = TextArea(
-    lexer=DynamicLexer(
-        lambda: PygmentsLexer.from_filename(
-            ApplicationState.current_path or ".txt", sync_from_start=False
-        )
-    ),
-    scrollbar=False,
-    line_numbers=True,
-    search_field=search_toolbar,
-)
-title = Window(
-    height=1,
-    content=FormattedTextControl("cli-pto"),
-    align=WindowAlign.CENTER,
-)
-
-def get_statusbar_line():
-    return " {}:{}  ".format(
-        text_field.document.cursor_position_row + 1,
-        text_field.document.cursor_position_col + 1,
-    )
 
 class TextInputDialog:
     def __init__(self, title="", label_text="", completer=None):
@@ -136,85 +113,127 @@ class MessageDialog:
 # -------------------
 bindings = KeyBindings()
 
-# Save
-@bindings.add("c-s")
+# New file
+@bindings.add('c-n')
 def _(event):
-    " Save "
-    do_open_file()
+    'New File'
+
+# Open file
+@bindings.add('c-o')
+def _(event):
+    'Open'
+    do_open_file(None)
+
+# Save
+@bindings.add('c-s')
+def _(event):
+    'Save'
 
 # Quit
-@bindings.add("c-q")
+@bindings.add('c-q')
 def _(event):
-    " Quit "
+    'Quit'
     do_exit()
 
 # Select all
-@bindings.add("c-a")
+@bindings.add('c-a')
 def _(event):
-    " Select all "
+    'Select all'
     do_select_all()
 
-# Go to line
-@bindings.add("c-g")
+# Deselect
+@bindings.add('c-d')
 def _(event):
-    " Go to line "
+    'Cancel'
+    deselect()
+@bindings.add('escape')
+def _(event):
+    'Cancel'
+    deselect()
+
+# Go to line
+@bindings.add('c-g')
+def _(event):
+    'Go to line'
     do_go_to()
 
 # Find
-@bindings.add("c-f")
+@bindings.add('c-d')
 def _(event):
-    " Find "
+    'Find'
     do_find()
 
 # Find Next
-@bindings.add("c-f", "c-n")
+@bindings.add('c-f', 'c-n')
 def _(event):
-    " Find "
+    'Find Next'
     do_find_next()
 
 # Copy
-@bindings.add("c-c")
+@bindings.add('c-c')
 def _(event):
-    " Copy "
+    'Copy'
     do_copy()
 
 # Cut
-@bindings.add("c-x")
+@bindings.add('c-x')
 def _(event):
-    " Cut "
+    'Cut'
     do_cut()
 
 # Paste
-@bindings.add("c-v")
+@bindings.add('c-v')
 def _(event):
-    " Paste "
+    'Paste'
     do_paste()
 
 # Undo
-@bindings.add("c-z")
+@bindings.add('c-z')
 def _(event):
-    " Undo "
+    'Undo'
     do_undo()
-
-@bindings.add("c-x")
-def _(event):
-    " Redo "
-
-@bindings.add('escape')
-def _(event):
-    " Cancel "
-    deselect()
 
 @bindings.add('f1')
 def _(event):
-    " Help "
+    'Help'
+    do_help()
+
+@bindings.add('f11')
+def _(event):
+    'Help'
     do_about()
 
 
 
 
+# Handlers
+# --------
 
-def do_open_file():
+search_toolbar = SearchToolbar()
+text_field = TextArea(
+    lexer=DynamicLexer(
+        lambda: PygmentsLexer.from_filename(
+            ApplicationState.current_path or ".txt", sync_from_start=False
+        )
+    ),
+    scrollbar=False,
+    line_numbers=True,
+    search_field=search_toolbar,
+)
+title = Window(
+    height=1,
+    content=FormattedTextControl("cli-pto"),
+    align=WindowAlign.CENTER,
+)
+
+def get_statusbar_line():
+    return " {}:{}  ".format(
+        text_field.document.cursor_position_row + 1,
+        text_field.document.cursor_position_col + 1,
+    )
+
+
+def do_open_file(filename):
     async def coroutine():
         open_dialog = TextInputDialog(
             title="Open file",
@@ -222,12 +241,15 @@ def do_open_file():
             completer=PathCompleter(),
         )
 
-        path = await show_dialog_as_float(open_dialog)
+        path = filename if filename else await show_dialog_as_float(open_dialog)
+        print(path)
         ApplicationState.current_path = path
 
         if path is not None:
             try:
-                with open(path, "rb") as f:
+                if not os.path.isfile(path):
+                    open(path, 'a').close()
+                with open(path, "rb+") as f:
                     text_field.text = f.read().decode("utf-8", errors="ignore")
             except IOError as e:
                 show_message("Error", "{}".format(e))
@@ -236,8 +258,34 @@ def do_open_file():
 
 
 def do_about():
-    show_message("About", "cli-pto.\nCreated by Özenç Bilgili.")
+    show_message("About", 
+    '''
+    cli-pto
+    Created by Özenç Bilgili
+    github.com/ozencb
+    ''')
 
+def do_help():
+    show_message('Help',
+    '''
+    Shortcuts:
+
+    New File: CTRL - O
+    Open File: CTRL - N
+    Save: CTRL - S
+    Quit: CTRL - Q
+
+    Select All: CTRL - A
+    Deselect: CTRL - D / Escape
+    Go To Line: CTRL - G
+    Find: CTRL - F
+    Find Next: CTRL - F + CTRL - N
+
+    Undo: CTRL - Z
+    Copy: CTRL - C
+    Cut: CTRL - X
+    Paste: CTRL - V
+    ''')
 
 def show_message(title, text):
     async def coroutine():
@@ -263,6 +311,8 @@ async def show_dialog_as_float(dialog):
         root_container.floats.remove(float_)
 
     return result
+
+
 
 
 def do_exit():
@@ -403,6 +453,24 @@ application = Application(
 
 
 def main():
+    if len(sys.argv) < 2:
+        filename = input_dialog(
+            title="Open or create a file.",
+            text="Please enter file name:",
+        ).run()
+    else:
+        filename = sys.argv[1]
+
+
+    
+    enc_key = input_dialog(
+        title="Password dialog example",
+        text="Please type your password:",
+        password=True,
+    ).run()
+
+    do_open_file(filename)
+
     application.run()
 
 if __name__ == "__main__":
