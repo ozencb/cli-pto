@@ -21,6 +21,7 @@ from prompt_toolkit.layout.containers import (
     VSplit,
     Window,
     WindowAlign,
+    FloatContainer,
 )
 from prompt_toolkit.layout.controls import FormattedTextControl
 from prompt_toolkit.layout.dimension import D
@@ -37,31 +38,17 @@ from prompt_toolkit.widgets import (
     MenuItem,
     SearchToolbar,
     TextArea,
+    Frame
 )
 
 
 class ApplicationState:
-    """
-    Application state.
-
-    For the simplicity, we store this as a global, but better would be to
-    instantiate this as an object and pass at around.
-    """
-
     show_status_bar = True
     current_path = None
 
 
-def get_statusbar_text():
-    return " Press F1 to open Help. "
-
-
-def get_statusbar_line():
-    return " {}:{}  ".format(
-        text_field.document.cursor_position_row + 1,
-        text_field.document.cursor_position_col + 1,
-    )
-
+# Handlers
+# --------
 
 search_toolbar = SearchToolbar()
 text_field = TextArea(
@@ -70,11 +57,21 @@ text_field = TextArea(
             ApplicationState.current_path or ".txt", sync_from_start=False
         )
     ),
-    scrollbar=True,
+    scrollbar=False,
     line_numbers=True,
     search_field=search_toolbar,
 )
+title = Window(
+    height=1,
+    content=FormattedTextControl("cli-pto"),
+    align=WindowAlign.CENTER,
+)
 
+def get_statusbar_line():
+    return " {}:{}  ".format(
+        text_field.document.cursor_position_row + 1,
+        text_field.document.cursor_position_col + 1,
+    )
 
 class TextInputDialog:
     def __init__(self, title="", label_text="", completer=None):
@@ -134,41 +131,16 @@ class MessageDialog:
         return self.dialog
 
 
-body = HSplit(
-    [
-        text_field,
-        search_toolbar,
-        ConditionalContainer(
-            content=VSplit(
-                [
-                    Window(
-                        FormattedTextControl(get_statusbar_line),
-                        style="class:status",
-                        width=9,
-                        align=WindowAlign.LEFT,
-                    ),
-                    Window(
-                        FormattedTextControl(get_statusbar_text), 
-                        style="class:status.right",
-                        align=WindowAlign.RIGHT,
-                    ),
 
-                ],
-                height=1,
-            ),
-            filter=Condition(lambda: ApplicationState.show_status_bar),
-        ),
-    ]
-)
-
-
-# Global key bindings.
+# Global key bindings
+# -------------------
 bindings = KeyBindings()
 
 # Save
 @bindings.add("c-s")
 def _(event):
     " Save "
+    do_open_file()
 
 # Quit
 @bindings.add("c-q")
@@ -236,11 +208,10 @@ def _(event):
 @bindings.add('f1')
 def _(event):
     " Help "
-    deselect()
+    do_about()
 
-#
-# Handlers for menu items.
-#
+
+
 
 
 def do_open_file():
@@ -265,7 +236,7 @@ def do_open_file():
 
 
 def do_about():
-    show_message("About", "Text editor demo.\nCreated by Jonathan Slenders.")
+    show_message("About", "cli-pto.\nCreated by Özenç Bilgili.")
 
 
 def show_message(title, text):
@@ -312,7 +283,7 @@ def do_go_to():
         try:
             line_number = int(line_number)
         except ValueError:
-            show_message("Invalid line number")
+            show_message("", "Invalid line number")
         else:
             text_field.buffer.cursor_position = text_field.buffer.document.translate_row_col_to_index(
                 line_number - 1, 0
@@ -370,34 +341,57 @@ def do_status_bar():
     ApplicationState.show_status_bar = not ApplicationState.show_status_bar
 
 
-#
-# The menu container.
-#
 
 
-root_container = MenuContainer(
-    body=body,
-    menu_items=[
-        MenuItem(
-            "Edit",
-            children=[
-                MenuItem("-", disabled=True),
-            ],
+
+
+# Components and containers
+# -------------------------
+body = HSplit(
+    [
+        title,
+        text_field,
+        search_toolbar,
+        ConditionalContainer(
+            content=VSplit(
+                [
+                    Window(
+                        FormattedTextControl(get_statusbar_line),
+                        style="class:status",
+                        width=10,
+                        align=WindowAlign.LEFT,
+                    ),
+                    Window(
+                        FormattedTextControl("Press F1 for help"), 
+                        style="class:status.right",
+                        align=WindowAlign.RIGHT,
+                    ),
+
+                ],
+                height=1,
+            ),
+            filter=Condition(lambda: ApplicationState.show_status_bar),
         ),
     ],
-    
-    
-    key_bindings=bindings,
 )
 
+root_container = FloatContainer(
+    content=body,
+    floats=[
+        Float(
+            xcursor=True,
+            ycursor=True,
+            content=CompletionsMenu(max_height=16, scroll_offset=1),
+        )
+    ],
+    key_bindings=bindings
+)
 
 style = Style.from_dict({
     "shadow": "bg:#440044",
-    })
-
+})
 
 layout = Layout(root_container, focused_element=text_field)
-
 
 application = Application(
     layout=layout,
@@ -407,9 +401,9 @@ application = Application(
 )
 
 
+
 def main():
     application.run()
-
 
 if __name__ == "__main__":
     main()
