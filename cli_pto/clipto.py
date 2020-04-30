@@ -260,10 +260,11 @@ def do_open_file(filename):
                 if not os.path.isfile(path):
                     open(path, 'a').close()
                 with open(path, "rb+") as f:
-                    text = crypto.decrypt_text(f.read())
-                    print(text)
-                    text_field.text = text
-                    f.close()
+                    if os.stat(path).st_size != 0:
+                        text_field.text = crypto.decrypt_text(f.read())
+                        f.close()
+                    else:
+                        text_field.text = ""
             except IOError as e:
                 show_message("Error", "{}".format(e))
 
@@ -273,18 +274,15 @@ def do_open_file(filename):
 def do_save_file():
     crypto = EncryptDecrypt(ApplicationState.password)
 
-    async def coroutine():
-        path = ApplicationState.current_path
-        if path is not None:
-            try:
-                with open(path, "wb") as f:
-                    enc = crypto.encrypt_text(text_field.text)
-                    f.write(enc)
-                    f.close()
-            except IOError as e:
-                show_message("Error", "{}".format(e))
-    
-    ensure_future(coroutine())
+    path = ApplicationState.current_path
+    if path is not None:
+        try:
+            with open(path, "wb") as f:
+                enc = crypto.encrypt_text(text_field.text)
+                f.write(enc)
+                f.close()
+        except IOError as e:
+            show_message("Error", "{}".format(e))
 
 
 def do_about():
