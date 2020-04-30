@@ -51,15 +51,15 @@ class ApplicationState:
     This class is not instantiated
     """
     show_status_bar = True
-    current_path = ""
-    password = ""
+    current_path = ''
+    password = ''
 
 
 class TextInputDialog:
     """
     Input prompts
     """
-    def __init__(self, title="", label_text="", completer=None):
+    def __init__(self, title='', label_text='', completer=None):
         self.future = Future()
 
         def accept_text(buf):
@@ -80,8 +80,8 @@ class TextInputDialog:
             accept_handler=accept_text,
         )
 
-        ok_button = Button(text="OK", handler=accept)
-        cancel_button = Button(text="Cancel", handler=cancel)
+        ok_button = Button(text='OK', handler=accept)
+        cancel_button = Button(text='Cancel', handler=cancel)
 
         self.dialog = Dialog(
             title=title,
@@ -105,7 +105,7 @@ class MessageDialog:
         def set_done():
             self.future.set_result(None)
 
-        ok_button = Button(text="OK", handler=(lambda: set_done()))
+        ok_button = Button(text='OK', handler=(lambda: set_done()))
 
         self.dialog = Dialog(
             title=title,
@@ -225,7 +225,7 @@ SEARCH_TOOLBAR = SearchToolbar()
 TEXT_FIELD = TextArea(
     lexer=DynamicLexer(
         lambda: PygmentsLexer.from_filename(
-            ApplicationState.current_path or ".txt", sync_from_start=False
+            ApplicationState.current_path or '.txt', sync_from_start=False
         )
     ),
     scrollbar=False,
@@ -235,14 +235,14 @@ TEXT_FIELD = TextArea(
 )
 TITLE = Window(
     height=1,
-    content=FormattedTextControl("cli-pto"),
+    content=FormattedTextControl('cli-pto'),
     align=WindowAlign.CENTER,
 )
 
 
 
 def get_statusbar_line():
-    return " {}:{}  ".format(
+    return ' {}:{}  '.format(
         TEXT_FIELD.document.cursor_position_row + 1,
         TEXT_FIELD.document.cursor_position_col + 1,
     )
@@ -253,8 +253,8 @@ def do_open_file(filename):
 
     async def coroutine():
         open_dialog = TextInputDialog(
-            title="Open file",
-            label_text="Enter the path of a file:",
+            title='Open file',
+            label_text='Enter the path of a file:',
             completer=PathCompleter(),
         )
 
@@ -265,14 +265,14 @@ def do_open_file(filename):
             try:
                 if not os.path.isfile(path):
                     open(path, 'a').close()
-                with open(path, "rb+") as f:
+                with open(path, 'rb+') as f:
                     if os.stat(path).st_size != 0:
                         TEXT_FIELD.text = crypto.decrypt_text(f.read())
                         f.close()
                     else:
-                        TEXT_FIELD.text = ""
+                        TEXT_FIELD.text = ''
             except IOError as e:
-                show_message("Error", "{}".format(e))
+                show_message('Error', '{}'.format(e))
 
     ensure_future(coroutine())
 
@@ -283,44 +283,46 @@ def do_save_file():
     path = ApplicationState.current_path
     if path is not None:
         try:
-            with open(path, "wb") as f:
+            with open(path, 'wb') as f:
                 enc = crypto.encrypt_text(TEXT_FIELD.text)
                 f.write(enc)
                 f.close()
         except IOError as e:
-            show_message("Error", "{}".format(e))
+            show_message('Error', '{}'.format(e))
 
 
 def do_about():
-    show_message("About", 
-    '''
-    cli-pto
-    Created by Özenç Bilgili
-    github.com/ozencb
-    ''')
+    show_message('About',
+                 '''
+                 cli-pto
+                 Created by Özenç Bilgili
+                 github.com/ozencb
+                 '''
+                 )
 
 
 def do_help():
     show_message('Help',
-    '''
-    Shortcuts:
+                 '''
+                 Shortcuts:
 
-    New File: CTRL - O
-    Open File: CTRL - N
-    Save: CTRL - S
-    Quit: CTRL - Q
+                 New File: CTRL - O
+                 Open File: CTRL - N
+                 Save: CTRL - S
+                 Quit: CTRL - Q
 
-    Select All: CTRL - A
-    Deselect: CTRL - D / Escape
-    Go To Line: CTRL - G
-    Find: CTRL - F
-    Find Next: CTRL - F + CTRL - N
+                 Select All: CTRL - A
+                 Deselect: CTRL - D / Escape
+                 Go To Line: CTRL - G
+                 Find: CTRL - F
+                 Find Next: CTRL - F + CTRL - N
 
-    Undo: CTRL - Z
-    Copy: CTRL - C
-    Cut: CTRL - X
-    Paste: CTRL - V
-    ''')
+                 Undo: CTRL - Z
+                 Copy: CTRL - C
+                 Cut: CTRL - X
+                 Paste: CTRL - V
+                 '''
+                 )
 
 
 def show_message(title, text):
@@ -332,7 +334,7 @@ def show_message(title, text):
 
 
 async def show_dialog_as_float(dialog):
-    " Coroutine. "
+    ' Coroutine. '
     float_ = Float(content=dialog)
     ROOT_CONTAINER.floats.insert(0, float_)
 
@@ -360,14 +362,14 @@ def do_time_date():
 
 def do_go_to():
     async def coroutine():
-        dialog = TextInputDialog(title="Go to line", label_text="Line number:")
+        dialog = TextInputDialog(title='Go to line', label_text='Line number:')
 
         line_number = await show_dialog_as_float(dialog)
 
         try:
             line_number = int(line_number)
         except ValueError:
-            show_message("", "Invalid line number")
+            show_message('', 'Invalid line number')
         else:
             TEXT_FIELD.buffer.cursor_position = TEXT_FIELD.buffer.document.translate_row_col_to_index(
                 line_number - 1, 0
@@ -442,13 +444,13 @@ BODY = HSplit(
                 [
                     Window(
                         FormattedTextControl(get_statusbar_line),
-                        style="class:status",
+                        style='class:status',
                         width=10,
                         align=WindowAlign.LEFT,
                     ),
                     Window(
-                        FormattedTextControl("Press F1 for Help, F11 for About"), 
-                        style="class:status.right",
+                        FormattedTextControl('Press F1 for Help, F11 for About'),
+                        style='class:status.right',
                         align=WindowAlign.RIGHT,
                     ),
 
@@ -473,7 +475,7 @@ ROOT_CONTAINER = FloatContainer(
 )
 
 STYLE = Style.from_dict({
-    "shadow": "bg:#440044",
+    'shadow': 'bg:#440044',
 })
 
 LAYOUT = Layout(ROOT_CONTAINER, focused_element=TEXT_FIELD)
@@ -492,8 +494,8 @@ def main():
     if len(sys.argv) < 2:
         while len(ApplicationState.current_path) < 1:
             filename = input_dialog(
-                title="Open or create a file.",
-                text="Please enter file name:",
+                title='Open or create a file.',
+                text='Please enter file name:',
             ).run()
             ApplicationState.current_path = format_filename(filename)
     else:
@@ -502,8 +504,8 @@ def main():
 
     while len(ApplicationState.password) < 8:
         ApplicationState.password = input_dialog(
-            title="Password",
-            text="Password must be longer than 8 characters\nPlease type your password:",
+            title='Password',
+            text='Password must be longer than 8 characters\nPlease type your password:',
             password=True,
         ).run()
 
@@ -511,5 +513,5 @@ def main():
 
     APPLICATION.run()
 
-if __name__ == "__main__":
+if __name__ == '__main__':
     main()
