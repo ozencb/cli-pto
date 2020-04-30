@@ -18,7 +18,7 @@ setup(
     version=get_version('cli_pto'),
     url='https://github.com/ozencb/cli-pto',
     packages=find_packages(),
-        install_requires=['prompt-toolkit', 'Pygments', 'cryptography'],
+        install_requires=['prompt-toolkit', 'Pygments', 'pycryptodome'],
         entry_points={'console_scripts': 'cli-pto = cli_pto.clipto:main'},
         license=open('LICENSE').read(),
         keywords=['text', 'editor', 'encryption', 'encrypted', 'password', 'manager']
