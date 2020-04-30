@@ -12,8 +12,6 @@ import re
 
 from asyncio import Future, ensure_future
 
-from cli_pto.EncryptDecrypt import EncryptDecrypt
-
 from prompt_toolkit.application import Application
 from prompt_toolkit.shortcuts import input_dialog
 
@@ -32,11 +30,8 @@ from prompt_toolkit.widgets import (
     Button,
     Dialog,
     Label,
-    MenuContainer,
-    MenuItem,
     SearchToolbar,
     TextArea,
-    Frame
 )
 from prompt_toolkit.layout.containers import (
     ConditionalContainer,
@@ -48,14 +43,22 @@ from prompt_toolkit.layout.containers import (
     FloatContainer,
 )
 
+from cli_pto.EncryptDecrypt import EncryptDecrypt
 
 class ApplicationState:
+    """
+    App state.
+    This class is not instantiated
+    """
     show_status_bar = True
     current_path = ""
     password = ""
 
 
 class TextInputDialog:
+    """
+    Input prompts
+    """
     def __init__(self, title="", label_text="", completer=None):
         self.future = Future()
 
@@ -93,6 +96,9 @@ class TextInputDialog:
 
 
 class MessageDialog:
+    """
+    Message boxes
+    """
     def __init__(self, title, text):
         self.future = Future()
 
@@ -116,95 +122,95 @@ class MessageDialog:
 
 # Global key bindings
 # -------------------
-bindings = KeyBindings()
+BINDINGS = KeyBindings()
 
 # New file
-@bindings.add('c-n')
+@BINDINGS.add('c-n')
 def _(event):
     'New File'
 
 # Open file
-@bindings.add('c-o')
+@BINDINGS.add('c-o')
 def _(event):
     'Open'
     do_open_file(None)
 
 # Save
-@bindings.add('c-s')
+@BINDINGS.add('c-s')
 def _(event):
     'Save'
     do_save_file()
 
 # Quit
-@bindings.add('c-q')
+@BINDINGS.add('c-q')
 def _(event):
     'Quit'
     do_exit()
 
 # Select all
-@bindings.add('c-a')
+@BINDINGS.add('c-a')
 def _(event):
     'Select all'
     do_select_all()
 
 # Deselect
-@bindings.add('c-d')
+@BINDINGS.add('c-d')
 def _(event):
     'Cancel'
     deselect()
-@bindings.add('escape')
+@BINDINGS.add('escape')
 def _(event):
     'Cancel'
     deselect()
 
 # Go to line
-@bindings.add('c-g')
+@BINDINGS.add('c-g')
 def _(event):
     'Go to line'
     do_go_to()
 
 # Find
-@bindings.add('c-f')
+@BINDINGS.add('c-f')
 def _(event):
     'Find'
     do_find()
 
 # Find Next
-@bindings.add('c-f', 'c-n')
+@BINDINGS.add('c-f', 'c-n')
 def _(event):
     'Find Next'
     do_find_next()
 
 # Copy
-@bindings.add('c-c')
+@BINDINGS.add('c-c')
 def _(event):
     'Copy'
     do_copy()
 
 # Cut
-@bindings.add('c-x')
+@BINDINGS.add('c-x')
 def _(event):
     'Cut'
     do_cut()
 
 # Paste
-@bindings.add('c-v')
+@BINDINGS.add('c-v')
 def _(event):
     'Paste'
     do_paste()
 
 # Undo
-@bindings.add('c-z')
+@BINDINGS.add('c-z')
 def _(event):
     'Undo'
     do_undo()
 
-@bindings.add('f1')
+@BINDINGS.add('f1')
 def _(event):
     'Help'
     do_help()
 
-@bindings.add('f11')
+@BINDINGS.add('f11')
 def _(event):
     'Help'
     do_about()
@@ -215,8 +221,8 @@ def _(event):
 # Handlers
 # --------
 
-search_toolbar = SearchToolbar()
-text_field = TextArea(
+SEARCH_TOOLBAR = SearchToolbar()
+TEXT_FIELD = TextArea(
     lexer=DynamicLexer(
         lambda: PygmentsLexer.from_filename(
             ApplicationState.current_path or ".txt", sync_from_start=False
@@ -225,9 +231,9 @@ text_field = TextArea(
     scrollbar=False,
     line_numbers=True,
     wrap_lines=True,
-    search_field=search_toolbar,
+    search_field=SEARCH_TOOLBAR,
 )
-title = Window(
+TITLE = Window(
     height=1,
     content=FormattedTextControl("cli-pto"),
     align=WindowAlign.CENTER,
@@ -237,8 +243,8 @@ title = Window(
 
 def get_statusbar_line():
     return " {}:{}  ".format(
-        text_field.document.cursor_position_row + 1,
-        text_field.document.cursor_position_col + 1,
+        TEXT_FIELD.document.cursor_position_row + 1,
+        TEXT_FIELD.document.cursor_position_col + 1,
     )
 
 
@@ -261,10 +267,10 @@ def do_open_file(filename):
                     open(path, 'a').close()
                 with open(path, "rb+") as f:
                     if os.stat(path).st_size != 0:
-                        text_field.text = crypto.decrypt_text(f.read())
+                        TEXT_FIELD.text = crypto.decrypt_text(f.read())
                         f.close()
                     else:
-                        text_field.text = ""
+                        TEXT_FIELD.text = ""
             except IOError as e:
                 show_message("Error", "{}".format(e))
 
@@ -278,7 +284,7 @@ def do_save_file():
     if path is not None:
         try:
             with open(path, "wb") as f:
-                enc = crypto.encrypt_text(text_field.text)
+                enc = crypto.encrypt_text(TEXT_FIELD.text)
                 f.write(enc)
                 f.close()
         except IOError as e:
@@ -328,7 +334,7 @@ def show_message(title, text):
 async def show_dialog_as_float(dialog):
     " Coroutine. "
     float_ = Float(content=dialog)
-    root_container.floats.insert(0, float_)
+    ROOT_CONTAINER.floats.insert(0, float_)
 
     app = get_app()
 
@@ -337,8 +343,8 @@ async def show_dialog_as_float(dialog):
     result = await dialog.future
     app.layout.focus(focused_before)
 
-    if float_ in root_container.floats:
-        root_container.floats.remove(float_)
+    if float_ in ROOT_CONTAINER.floats:
+        ROOT_CONTAINER.floats.remove(float_)
 
     return result
 
@@ -349,7 +355,7 @@ def do_exit():
 
 def do_time_date():
     text = datetime.datetime.now().isoformat()
-    text_field.buffer.insert_text(text)
+    TEXT_FIELD.buffer.insert_text(text)
 
 
 def do_go_to():
@@ -363,7 +369,7 @@ def do_go_to():
         except ValueError:
             show_message("", "Invalid line number")
         else:
-            text_field.buffer.cursor_position = text_field.buffer.document.translate_row_col_to_index(
+            TEXT_FIELD.buffer.cursor_position = TEXT_FIELD.buffer.document.translate_row_col_to_index(
                 line_number - 1, 0
             )
 
@@ -371,48 +377,48 @@ def do_go_to():
 
 
 def do_undo():
-    text_field.buffer.undo()
+    TEXT_FIELD.buffer.undo()
 
 
 def do_cut():
-    data = text_field.buffer.cut_selection()
+    data = TEXT_FIELD.buffer.cut_selection()
     get_app().clipboard.set_data(data)
 
 
 def do_copy():
-    data = text_field.buffer.copy_selection()
+    data = TEXT_FIELD.buffer.copy_selection()
     get_app().clipboard.set_data(data)
 
 
 def do_delete():
-    text_field.buffer.cut_selection()
+    TEXT_FIELD.buffer.cut_selection()
 
 
 def do_find():
-    start_search(text_field.control)
+    start_search(TEXT_FIELD.control)
 
 
 def do_find_next():
     search_state = get_app().current_search_state
 
-    cursor_position = text_field.buffer.get_search_position(
+    cursor_position = TEXT_FIELD.buffer.get_search_position(
         search_state, include_current_position=False
     )
-    text_field.buffer.cursor_position = cursor_position
+    TEXT_FIELD.buffer.cursor_position = cursor_position
 
 
 def do_paste():
-    text_field.buffer.paste_clipboard_data(get_app().clipboard.get_data())
+    TEXT_FIELD.buffer.paste_clipboard_data(get_app().clipboard.get_data())
 
 
 def do_select_all():
-    text_field.buffer.cursor_position = 0
-    text_field.buffer.start_selection()
-    text_field.buffer.cursor_position = len(text_field.buffer.text)
+    TEXT_FIELD.buffer.cursor_position = 0
+    TEXT_FIELD.buffer.start_selection()
+    TEXT_FIELD.buffer.cursor_position = len(TEXT_FIELD.buffer.text)
 
 
 def deselect():
-    text_field.buffer.exit_selection()
+    TEXT_FIELD.buffer.exit_selection()
 
 
 def do_status_bar():
@@ -425,11 +431,11 @@ def format_filename(filename):
 
 # Components and containers
 # -------------------------
-body = HSplit(
+BODY = HSplit(
     [
-        title,
-        text_field,
-        search_toolbar,
+        TITLE,
+        TEXT_FIELD,
+        SEARCH_TOOLBAR,
         ConditionalContainer(
             content=VSplit(
                 [
@@ -453,8 +459,8 @@ body = HSplit(
     ],
 )
 
-root_container = FloatContainer(
-    content=body,
+ROOT_CONTAINER = FloatContainer(
+    content=BODY,
     floats=[
         Float(
             xcursor=True,
@@ -462,19 +468,19 @@ root_container = FloatContainer(
             content=CompletionsMenu(max_height=16, scroll_offset=1),
         )
     ],
-    key_bindings=bindings
+    key_bindings=BINDINGS
 )
 
-style = Style.from_dict({
+STYLE = Style.from_dict({
     "shadow": "bg:#440044",
 })
 
-layout = Layout(root_container, focused_element=text_field)
+LAYOUT = Layout(ROOT_CONTAINER, focused_element=TEXT_FIELD)
 
-application = Application(
-    layout=layout,
+APPLICATION = Application(
+    layout=LAYOUT,
     enable_page_navigation_bindings=True,
-    style=style,
+    style=STYLE,
     full_screen=True,
 )
 
@@ -501,7 +507,7 @@ def main():
 
     do_open_file(ApplicationState.current_path)
 
-    application.run()
+    APPLICATION.run()
 
 if __name__ == "__main__":
     main()
