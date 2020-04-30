@@ -1,4 +1,5 @@
 build/
 dist/
 test/
+cli_pto/test*
 cli_pto.egg-info/
