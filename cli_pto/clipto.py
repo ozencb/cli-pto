@@ -43,7 +43,7 @@ from prompt_toolkit.layout.containers import (
     FloatContainer,
 )
 
-from cli_pto.EncryptDecrypt import EncryptDecrypt
+from cli_pto.encrypt_decrypt import EncryptDecrypt
 
 class ApplicationState:
     """
@@ -429,6 +429,7 @@ def format_filename(filename):
     return re.sub(r'[/\\:*?"<>|]', '', filename).lstrip('0123456789')
 
 
+
 # Components and containers
 # -------------------------
 BODY = HSplit(
@@ -446,7 +447,7 @@ BODY = HSplit(
                         align=WindowAlign.LEFT,
                     ),
                     Window(
-                        FormattedTextControl("Press F1 for help"), 
+                        FormattedTextControl("Press F1 for Help, F11 for About"), 
                         style="class:status.right",
                         align=WindowAlign.RIGHT,
                     ),
@@ -483,6 +484,7 @@ APPLICATION = Application(
     style=STYLE,
     full_screen=True,
 )
+
 
 
 

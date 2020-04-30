@@ -1,16 +1,18 @@
-from Crypto.Cipher import AES
-from Crypto.Protocol.KDF import PBKDF2
-from Crypto.Util.Padding import pad, unpad
 import random
 import string
 import base64
+
+from Crypto.Cipher import AES
+from Crypto.Protocol.KDF import PBKDF2
+from Crypto.Util.Padding import pad, unpad
+
 
 BLOCK_SIZE = 32
 
 class EncryptDecrypt:
     def __init__(self, password):
         self.password = password
-    
+
     def __generate_key(self):
         password = self.password
         random.seed(password)
