@@ -8,6 +8,7 @@ Description: cli-pto is a CLI text editing tool with encryption.
 import sys
 import os
 import datetime
+
 from asyncio import Future, ensure_future
 
 from prompt_toolkit.application import Application
@@ -128,6 +129,7 @@ def _(event):
 @bindings.add('c-s')
 def _(event):
     'Save'
+    do_save_file()
 
 # Quit
 @bindings.add('c-q')
@@ -158,7 +160,7 @@ def _(event):
     do_go_to()
 
 # Find
-@bindings.add('c-d')
+@bindings.add('c-f')
 def _(event):
     'Find'
     do_find()
@@ -218,6 +220,7 @@ text_field = TextArea(
     ),
     scrollbar=False,
     line_numbers=True,
+    wrap_lines=True,
     search_field=search_toolbar,
 )
 title = Window(
@@ -242,7 +245,7 @@ def do_open_file(filename):
         )
 
         path = filename if filename else await show_dialog_as_float(open_dialog)
-        print(path)
+
         ApplicationState.current_path = path
 
         if path is not None:
@@ -251,9 +254,23 @@ def do_open_file(filename):
                     open(path, 'a').close()
                 with open(path, "rb+") as f:
                     text_field.text = f.read().decode("utf-8", errors="ignore")
+                    f.close()
             except IOError as e:
                 show_message("Error", "{}".format(e))
 
+    ensure_future(coroutine())
+
+def do_save_file():
+    async def coroutine():
+        path = ApplicationState.current_path
+        if path is not None:
+            try:
+                with open(path, "w") as f:
+                    f.write(text_field.text)
+                    f.close()
+            except IOError as e:
+                show_message("Error", "{}".format(e))
+    
     ensure_future(coroutine())
 
 
