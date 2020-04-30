@@ -1,6 +1,5 @@
 import random
 import string
-import base64
 
 from Crypto.Cipher import AES
 from Crypto.Protocol.KDF import PBKDF2
@@ -17,7 +16,7 @@ class EncryptDecrypt:
         password = self.password
         random.seed(password)
         salt = ''.join(random.choice(string.ascii_lowercase) for i in range(32))
-        return PBKDF2(password, salt, 16, 1000, None) 
+        return PBKDF2(password, salt, 16, 1000, None)
 
     def encrypt_text(self, text):
         cipher = AES.new(self.__generate_key(), AES.MODE_ECB)
