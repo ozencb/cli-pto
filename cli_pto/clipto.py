@@ -8,8 +8,11 @@ Description: cli-pto is a CLI text editing tool with encryption.
 import sys
 import os
 import datetime
+import re
 
 from asyncio import Future, ensure_future
+
+from cli_pto.EncryptDecrypt import EncryptDecrypt
 
 from prompt_toolkit.application import Application
 from prompt_toolkit.shortcuts import input_dialog
@@ -48,7 +51,8 @@ from prompt_toolkit.layout.containers import (
 
 class ApplicationState:
     show_status_bar = True
-    current_path = None
+    current_path = ""
+    password = ""
 
 
 class TextInputDialog:
@@ -229,6 +233,8 @@ title = Window(
     align=WindowAlign.CENTER,
 )
 
+
+
 def get_statusbar_line():
     return " {}:{}  ".format(
         text_field.document.cursor_position_row + 1,
@@ -237,6 +243,8 @@ def get_statusbar_line():
 
 
 def do_open_file(filename):
+    crypto = EncryptDecrypt(ApplicationState.password)
+
     async def coroutine():
         open_dialog = TextInputDialog(
             title="Open file",
@@ -245,7 +253,6 @@ def do_open_file(filename):
         )
 
         path = filename if filename else await show_dialog_as_float(open_dialog)
-
         ApplicationState.current_path = path
 
         if path is not None:
@@ -253,20 +260,26 @@ def do_open_file(filename):
                 if not os.path.isfile(path):
                     open(path, 'a').close()
                 with open(path, "rb+") as f:
-                    text_field.text = f.read().decode("utf-8", errors="ignore")
+                    text = crypto.decrypt_text(f.read())
+                    print(text)
+                    text_field.text = text
                     f.close()
             except IOError as e:
                 show_message("Error", "{}".format(e))
 
     ensure_future(coroutine())
 
+
 def do_save_file():
+    crypto = EncryptDecrypt(ApplicationState.password)
+
     async def coroutine():
         path = ApplicationState.current_path
         if path is not None:
             try:
-                with open(path, "w") as f:
-                    f.write(text_field.text)
+                with open(path, "wb") as f:
+                    enc = crypto.encrypt_text(text_field.text)
+                    f.write(enc)
                     f.close()
             except IOError as e:
                 show_message("Error", "{}".format(e))
@@ -281,6 +294,7 @@ def do_about():
     Created by Özenç Bilgili
     github.com/ozencb
     ''')
+
 
 def do_help():
     show_message('Help',
@@ -303,6 +317,7 @@ def do_help():
     Cut: CTRL - X
     Paste: CTRL - V
     ''')
+
 
 def show_message(title, text):
     async def coroutine():
@@ -328,8 +343,6 @@ async def show_dialog_as_float(dialog):
         root_container.floats.remove(float_)
 
     return result
-
-
 
 
 def do_exit():
@@ -399,17 +412,17 @@ def do_select_all():
     text_field.buffer.start_selection()
     text_field.buffer.cursor_position = len(text_field.buffer.text)
 
+
 def deselect():
     text_field.buffer.exit_selection()
-
 
 
 def do_status_bar():
     ApplicationState.show_status_bar = not ApplicationState.show_status_bar
 
 
-
-
+def format_filename(filename):
+    return re.sub(r'[/\\:*?"<>|]', '', filename).lstrip('0123456789')
 
 
 # Components and containers
@@ -471,22 +484,24 @@ application = Application(
 
 def main():
     if len(sys.argv) < 2:
-        filename = input_dialog(
-            title="Open or create a file.",
-            text="Please enter file name:",
-        ).run()
+        while len(ApplicationState.current_path) < 1:
+            filename = input_dialog(
+                title="Open or create a file.",
+                text="Please enter file name:",
+            ).run()
+            ApplicationState.current_path = format_filename(filename)
     else:
-        filename = sys.argv[1]
+        ApplicationState.current_path = format_filename(sys.argv[1])
 
 
-    
-    enc_key = input_dialog(
-        title="Password dialog example",
-        text="Please type your password:",
-        password=True,
-    ).run()
+    while len(ApplicationState.password) < 8:
+        ApplicationState.password = input_dialog(
+            title="Password",
+            text="Password must be longer than 8 characters\nPlease type your password:",
+            password=True,
+        ).run()
 
-    do_open_file(filename)
+    do_open_file(ApplicationState.current_path)
 
     application.run()
 
