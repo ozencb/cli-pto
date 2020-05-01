@@ -1,6 +1,6 @@
 [![GitHub Issues](https://img.shields.io/github/issues/Ozencb/cli-pto)](https://github.com/Ozencb/cli-pto/issues)
-[![Stars](https://img.shields.io/github/stars/Ozencb/cli-pto)]()
-[![Forks](https://img.shields.io/github/forks/Ozencb/cli-pto)]()
+[![Stars](https://img.shields.io/github/stars/Ozencb/cli-pto)](https://github.com/Ozencb/cli-pto)
+[![Forks](https://img.shields.io/github/forks/Ozencb/cli-pto)](https://github.com/Ozencb/cli-pto)
 [![MIT](https://img.shields.io/github/license/Ozencb/cli-pto)](../master/LICENSE)
 
 # cli-pto
