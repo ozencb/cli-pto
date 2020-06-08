@@ -249,7 +249,7 @@ def get_statusbar_line():
 
 
 def do_open_file(filename):
-    crypto = EncryptDecrypt(ApplicationState.password)
+    crypto = EncryptDecrypt(ApplicationState.password, ApplicationState.filename)
 
     async def coroutine():
         open_dialog = TextInputDialog(
@@ -498,6 +498,7 @@ def main():
                 text='Please enter file name:',
             ).run()
             ApplicationState.current_path = format_filename(filename)
+            ApplicationState.filename = filename
     else:
         ApplicationState.current_path = format_filename(sys.argv[1])
 

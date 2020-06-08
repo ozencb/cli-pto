@@ -9,13 +9,17 @@ from Crypto.Util.Padding import pad, unpad
 BLOCK_SIZE = 32
 
 class EncryptDecrypt:
-    def __init__(self, password):
+    def __init__(self, password, filename):
         self.password = password
+        self.filename = filename
 
     def __generate_key(self):
         password = self.password
-        random.seed(password)
+        filename = self.filename
+
+        random.seed(filename)
         salt = ''.join(random.choice(string.ascii_lowercase) for i in range(32))
+
         return PBKDF2(password, salt, 16, 1000, None)
 
     def encrypt_text(self, text):
