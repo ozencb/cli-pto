@@ -53,6 +53,7 @@ class ApplicationState:
     show_status_bar = True
     current_path = ''
     password = ''
+    user = ''
 
 
 class TextInputDialog:
@@ -249,7 +250,7 @@ def get_statusbar_line():
 
 
 def do_open_file(filename):
-    crypto = EncryptDecrypt(ApplicationState.password, ApplicationState.filename)
+    crypto = EncryptDecrypt(ApplicationState.user, ApplicationState.password)
 
     async def coroutine():
         open_dialog = TextInputDialog(
@@ -278,7 +279,7 @@ def do_open_file(filename):
 
 
 def do_save_file():
-    crypto = EncryptDecrypt(ApplicationState.password)
+    crypto = EncryptDecrypt(ApplicationState.user, ApplicationState.password)
 
     path = ApplicationState.current_path
     if path is not None:
@@ -498,10 +499,14 @@ def main():
                 text='Please enter file name:',
             ).run()
             ApplicationState.current_path = format_filename(filename)
-            ApplicationState.filename = filename
     else:
         ApplicationState.current_path = format_filename(sys.argv[1])
 
+    while len(ApplicationState.user) < 1:
+        ApplicationState.user = input_dialog(
+            title='User',
+            text='Please type your user name:',
+        ).run()
 
     while len(ApplicationState.password) < 8:
         ApplicationState.password = input_dialog(
@@ -509,6 +514,8 @@ def main():
             text='Password must be longer than 8 characters\nPlease type your password:',
             password=True,
         ).run()
+   
+
 
     do_open_file(ApplicationState.current_path)
 
